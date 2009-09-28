@@ -1,0 +1,17 @@
+mutt-ical.py is meant as a simple way to reply to ical invitations from mutt.
+
+To use it, copy it and ical_reply_sendmail_wrapper.sh to some directory in your $PATH.
+
+In order to be able to use it from mutt, modify your ~/.mailcap or /etc/mailcap
+files to call this script, add lines like:
+
+    text/calendar; mutt-ical.py -i -e "your@email.address" %s
+    application/ics; mutt-ical.py -i -e "your@email.address" %s
+
+(Don't forget to add your email address)
+
+To reply, just open the ical file from mutt.
+
+Inspired by:
+    http://weirdzone.ru/~veider/accept.py
+    http://vpim.rubyforge.org/files/samples/README_mutt.html
