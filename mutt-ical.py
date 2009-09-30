@@ -12,6 +12,7 @@ __license__="MIT"
 import vobject
 import tempfile, time
 import os, sys
+import warnings
 from datetime import datetime
 from subprocess import Popen, PIPE
 from getopt import gnu_getopt as getopt
@@ -119,7 +120,9 @@ if __name__=="__main__":
 
     invitation_file = args[0]
     with open(invitation_file) as f:
-        invitation = vobject.readOne(f)
+        with warnings.catch_warnings(): #vobject uses deprecated Exception stuff
+            warnings.simplefilter("ignore")
+            invitation = vobject.readOne(f, ignoreUnreadable=True)
 
     ans = get_answer(invitation)
 
