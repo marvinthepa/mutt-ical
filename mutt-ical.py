@@ -79,9 +79,9 @@ def get_mutt_command(ical, email_address, accept_decline, icsfile):
     accept_decline = accept_decline.capitalize()
     sender = ical.vevent.contents['organizer'][0].value.split(':')[1].encode()
     summary = ical.vevent.contents['summary'][0].value.encode()
-    command = ["mutt", sender, "-a", icsfile,
+    command = ["mutt", "-a", icsfile,
             "-e", 'set sendmail=\'ical_reply_sendmail_wrapper.sh\'',
-            "-s", "'%s: %s'" % (accept_decline, summary)]
+            "-s", "'%s: %s'" % (accept_decline, summary), "--", sender]
     return command
 
 def execute(command, mailtext):
