@@ -12,6 +12,10 @@ files to call this script, add lines like:
 
 To reply, just open the ical file from mutt.
 
+Requirements:
+mutt, python, bash, vobject:
+http://vobject.skyhouseconsulting.com/
+
 Inspired by:
     http://weirdzone.ru/~veider/accept.py
     http://vpim.rubyforge.org/files/samples/README_mutt.html
