@@ -6,8 +6,11 @@ This script is meant as a simple way to reply to ical invitations from mutt.
 See README for instructions and LICENSE for licensing information.
 """
 
+from __future__ import with_statement
+
 __author__="Martin Sander"
 __license__="MIT"
+
 
 import vobject
 import tempfile, time
@@ -120,8 +123,11 @@ if __name__=="__main__":
 
     invitation_file = args[0]
     with open(invitation_file) as f:
-        with warnings.catch_warnings(): #vobject uses deprecated Exception stuff
-            warnings.simplefilter("ignore")
+        try:
+            with warnings.catch_warnings(): #vobject uses deprecated Exception stuff
+                warnings.simplefilter("ignore")
+                invitation = vobject.readOne(f, ignoreUnreadable=True)
+        except AttributeError:
             invitation = vobject.readOne(f, ignoreUnreadable=True)
 
     ans = get_answer(invitation)
