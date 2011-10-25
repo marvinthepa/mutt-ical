@@ -11,7 +11,6 @@ from __future__ import with_statement
 __author__="Martin Sander"
 __license__="MIT"
 
-
 import vobject
 import tempfile, time
 import os, sys
@@ -19,6 +18,7 @@ import warnings
 from datetime import datetime
 from subprocess import Popen, PIPE
 from getopt import gnu_getopt as getopt
+from pprint import pprint
 
 usage="""
 usage:
@@ -37,14 +37,14 @@ def del_if_present(dic, key):
 
 def set_accept_state(attendees, state):
     for attendee in attendees:
-        attendee.params['PARTSTAT'][0] = state
+        attendee.params['PARTSTAT'] = [unicode(state)]
         for i in ["RSVP","ROLE","X-NUM-GUESTS","CUTYPE"]:
             del_if_present(attendee.params,i)
     return attendees
 
 def get_accept_decline():
     while True:
-        sys.stdout.write("Accept Invitation? [Y/n/t]")
+        sys.stdout.write("\nAccept Invitation? [Y/n/t]")
         ans = sys.stdin.readline()
         if ans.lower() == 'y\n' or ans == '\n':
             return 'ACCEPTED'
@@ -83,8 +83,9 @@ def get_mutt_command(ical, email_address, accept_decline, icsfile):
     sender = ical.vevent.contents['organizer'][0].value.split(':')[1].encode()
     summary = ical.vevent.contents['summary'][0].value.encode()
     command = ["mutt", "-a", icsfile,
-            "-e", 'set sendmail=\'ical_reply_sendmail_wrapper.sh\'',
             "-s", "'%s: %s'" % (accept_decline, summary), "--", sender]
+            #Uncomment the below line, and move it above the -s line to enable the wrapper
+            #"-e", 'set sendmail=\'ical_reply_sendmail_wrapper.sh\'',
     return command
 
 def execute(command, mailtext):
@@ -101,10 +102,45 @@ def execute(command, mailtext):
                 exit code %d\nPress return to continue" % result
         sys.stdin.readline()
 
+def openics(invitation_file):
+    with open(invitation_file) as f:
+        try:
+            with warnings.catch_warnings(): #vobject uses deprecated Exception stuff
+                warnings.simplefilter("ignore")
+                invitation = vobject.readOne(f, ignoreUnreadable=True)
+        except AttributeError:
+            invitation = vobject.readOne(f, ignoreUnreadable=True)
+	return invitation
+
+def display(ical):
+    summary = ical.vevent.contents['summary'][0].value.encode()
+    sender = ical.vevent.contents['organizer'][0].value.split(':')[1].encode()
+    try:
+        description = ical.vevent.contents['description'][0].value
+    except KeyError:
+        description = "NO DESCRIPTION"
+    attendees = ical.vevent.contents['attendee']
+    sys.stdout.write("From:\t" + sender + "\n")
+    sys.stdout.write("Title:\t" + summary + "\n")
+    sys.stdout.write("To:\t")
+    for attendee in attendees:
+        sys.stdout.write(attendee.params['CN'][0] + " <" + attendee.value.split(':')[1] + ">, ")
+    sys.stdout.write("\n\n")
+    sys.stdout.write(description + "\n")
+
 if __name__=="__main__":
     email_address = None
     accept_decline = 'ACCEPTED'
     opts, args=getopt(sys.argv[1:],"e:aidt")
+
+    if len(args) < 1:
+        sys.stderr.write(usage)
+        sys.exit(1)
+
+    invitation = openics(args[0])
+    #print(invitation)
+    display(invitation)
+
     for opt,arg in opts:
         if opt == '-e':
             email_address = arg
@@ -116,19 +152,6 @@ if __name__=="__main__":
             accept_decline = 'DECLINED'
         if opt == '-t':
             accept_decline = 'TENTATIVE'
-
-    if len(args) < 1 or not email_address:
-        sys.stderr.write(usage)
-        sys.exit(1)
-
-    invitation_file = args[0]
-    with open(invitation_file) as f:
-        try:
-            with warnings.catch_warnings(): #vobject uses deprecated Exception stuff
-                warnings.simplefilter("ignore")
-                invitation = vobject.readOne(f, ignoreUnreadable=True)
-        except AttributeError:
-            invitation = vobject.readOne(f, ignoreUnreadable=True)
 
     ans = get_answer(invitation)
 
