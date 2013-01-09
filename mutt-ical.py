@@ -181,14 +181,17 @@ if __name__=="__main__":
     set_accept_state(attendees,accept_decline)
     ans.vevent.add('attendee')
     ans.vevent.attendee_list.pop()
+    flag = 1
     for attendee in attendees:
         if hasattr(attendee,'EMAIL_param'):
             if attendee.EMAIL_param == email_address:
                 ans.vevent.attendee_list.append(attendee)
+                flag = 0
         else:
             if attendee.value.split(':')[1] == email_address:
                 ans.vevent.attendee_list.append(attendee)
-    if len(ans.vevent.attendee.value) < 1:
+                flag = 0
+    if flag:
         sys.stderr.write("Seems like you have not been invited to this event!\n")
         sys.exit(1)
 
