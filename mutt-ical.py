@@ -18,7 +18,6 @@ import warnings
 from datetime import datetime
 from subprocess import Popen, PIPE
 from getopt import gnu_getopt as getopt
-from pprint import pprint
 
 usage="""
 usage:
@@ -61,7 +60,9 @@ def get_answer(invitation):
     ans.add('vevent')
 
     # just copy from invitation
-    for i in ["uid", "summary", "dtstart", "dtend", "organizer"]:
+    #for i in ["uid", "summary", "dtstart", "dtend", "organizer"]:
+	# There's a problem serializing TZ info in Python, temp fix
+    for i in ["uid", "summary", "organizer"]:
         if invitation.vevent.contents.has_key(i):
             ans.vevent.add( invitation.vevent.contents[i][0] )
 
@@ -80,7 +81,13 @@ def write_to_tempfile(ical):
 
 def get_mutt_command(ical, email_address, accept_decline, icsfile):
     accept_decline = accept_decline.capitalize()
-    sender = ical.vevent.contents['organizer'][0].value.split(':')[1].encode()
+    if ical.vevent.contents.has_key('organizer'):
+        if hasattr(ical.vevent.organizer,'EMAIL_param'):
+            sender = ical.vevent.organizer.EMAIL_param
+        else:
+            sender = ical.vevent.organizer.value.split(':')[1] #workaround for MS
+    else:
+        sender = "NO SENDER"
     summary = ical.vevent.contents['summary'][0].value.encode()
     command = ["mutt", "-a", icsfile,
             "-s", "'%s: %s'" % (accept_decline, summary), "--", sender]
@@ -114,17 +121,29 @@ def openics(invitation_file):
 
 def display(ical):
     summary = ical.vevent.contents['summary'][0].value.encode()
-    sender = ical.vevent.contents['organizer'][0].value.split(':')[1].encode()
-    try:
+    if ical.vevent.contents.has_key('organizer'):
+        if hasattr(ical.vevent.organizer,'EMAIL_param'):
+            sender = ical.vevent.organizer.EMAIL_param
+        else:
+            sender = ical.vevent.organizer.value.split(':')[1] #workaround for MS
+    else:
+        sender = "NO SENDER"
+    if ical.vevent.contents.has_key('description'):
         description = ical.vevent.contents['description'][0].value
-    except KeyError:
+    else:
         description = "NO DESCRIPTION"
-    attendees = ical.vevent.contents['attendee']
+    if ical.vevent.contents.has_key('attendee'):
+        attendees = ical.vevent.contents['attendee']
+    else:
+        attendees = ""
     sys.stdout.write("From:\t" + sender + "\n")
     sys.stdout.write("Title:\t" + summary + "\n")
     sys.stdout.write("To:\t")
     for attendee in attendees:
-        sys.stdout.write(attendee.params['CN'][0] + " <" + attendee.value.split(':')[1] + ">, ")
+        if hasattr(attendee,'EMAIL_param'):
+            sys.stdout.write(attendee.CN_param + " <" + attendee.EMAIL_param + ">, ")
+        else:
+            sys.stdout.write(attendee.CN_param + " <" + attendee.value.split(':')[1] + ">, ") #workaround for MS
     sys.stdout.write("\n\n")
     sys.stdout.write(description + "\n")
 
@@ -155,10 +174,21 @@ if __name__=="__main__":
 
     ans = get_answer(invitation)
 
-    attendees = invitation.vevent.contents['attendee']
+    if invitation.vevent.contents.has_key('attendee'):
+        attendees = invitation.vevent.contents['attendee']
+    else:
+        attendees = ""
     set_accept_state(attendees,accept_decline)
-    ans.vevent.contents['attendee'] = [i for i in attendees if i.value.endswith(email_address)]
-    if len(ans.vevent.contents) < 1:
+    ans.vevent.add('attendee')
+    ans.vevent.attendee_list.pop()
+    for attendee in attendees:
+        if hasattr(attendee,'EMAIL_param'):
+            if attendee.EMAIL_param == email_address:
+                ans.vevent.attendee_list.append(attendee)
+        else:
+            if attendee.value.split(':')[1] == email_address:
+                ans.vevent.attendee_list.append(attendee)
+    if len(ans.vevent.attendee.value) < 1:
         sys.stderr.write("Seems like you have not been invited to this event!\n")
         sys.exit(1)
 
