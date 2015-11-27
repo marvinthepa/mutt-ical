@@ -11,7 +11,6 @@ from __future__ import with_statement
 __author__="Martin Sander"
 __license__="MIT"
 
-
 import vobject
 import tempfile, time
 import os, sys
@@ -37,14 +36,14 @@ def del_if_present(dic, key):
 
 def set_accept_state(attendees, state):
     for attendee in attendees:
-        attendee.params['PARTSTAT'][0] = state
+        attendee.params['PARTSTAT'] = [unicode(state)]
         for i in ["RSVP","ROLE","X-NUM-GUESTS","CUTYPE"]:
             del_if_present(attendee.params,i)
     return attendees
 
 def get_accept_decline():
     while True:
-        sys.stdout.write("Accept Invitation? [Y/n/t]")
+        sys.stdout.write("\nAccept Invitation? [Y/n/t]")
         ans = sys.stdin.readline()
         if ans.lower() == 'y\n' or ans == '\n':
             return 'ACCEPTED'
@@ -61,7 +60,9 @@ def get_answer(invitation):
     ans.add('vevent')
 
     # just copy from invitation
-    for i in ["uid", "summary", "dtstart", "dtend", "organizer"]:
+    #for i in ["uid", "summary", "dtstart", "dtend", "organizer"]:
+	# There's a problem serializing TZ info in Python, temp fix
+    for i in ["uid", "summary", "organizer"]:
         if invitation.vevent.contents.has_key(i):
             ans.vevent.add( invitation.vevent.contents[i][0] )
 
@@ -80,11 +81,18 @@ def write_to_tempfile(ical):
 
 def get_mutt_command(ical, email_address, accept_decline, icsfile):
     accept_decline = accept_decline.capitalize()
-    sender = ical.vevent.contents['organizer'][0].value.split(':')[1].encode()
+    if ical.vevent.contents.has_key('organizer'):
+        if hasattr(ical.vevent.organizer,'EMAIL_param'):
+            sender = ical.vevent.organizer.EMAIL_param
+        else:
+            sender = ical.vevent.organizer.value.split(':')[1] #workaround for MS
+    else:
+        sender = "NO SENDER"
     summary = ical.vevent.contents['summary'][0].value.encode()
     command = ["mutt", "-a", icsfile,
-            "-e", 'set sendmail=\'ical_reply_sendmail_wrapper.sh\'',
             "-s", "'%s: %s'" % (accept_decline, summary), "--", sender]
+            #Uncomment the below line, and move it above the -s line to enable the wrapper
+            #"-e", 'set sendmail=\'ical_reply_sendmail_wrapper.sh\'',
     return command
 
 def execute(command, mailtext):
@@ -101,10 +109,57 @@ def execute(command, mailtext):
                 exit code %d\nPress return to continue" % result
         sys.stdin.readline()
 
+def openics(invitation_file):
+    with open(invitation_file) as f:
+        try:
+            with warnings.catch_warnings(): #vobject uses deprecated Exception stuff
+                warnings.simplefilter("ignore")
+                invitation = vobject.readOne(f, ignoreUnreadable=True)
+        except AttributeError:
+            invitation = vobject.readOne(f, ignoreUnreadable=True)
+	return invitation
+
+def display(ical):
+    summary = ical.vevent.contents['summary'][0].value.encode()
+    if ical.vevent.contents.has_key('organizer'):
+        if hasattr(ical.vevent.organizer,'EMAIL_param'):
+            sender = ical.vevent.organizer.EMAIL_param
+        else:
+            sender = ical.vevent.organizer.value.split(':')[1] #workaround for MS
+    else:
+        sender = "NO SENDER"
+    if ical.vevent.contents.has_key('description'):
+        description = ical.vevent.contents['description'][0].value
+    else:
+        description = "NO DESCRIPTION"
+    if ical.vevent.contents.has_key('attendee'):
+        attendees = ical.vevent.contents['attendee']
+    else:
+        attendees = ""
+    sys.stdout.write("From:\t" + sender + "\n")
+    sys.stdout.write("Title:\t" + summary + "\n")
+    sys.stdout.write("To:\t")
+    for attendee in attendees:
+        if hasattr(attendee,'EMAIL_param'):
+            sys.stdout.write(attendee.CN_param + " <" + attendee.EMAIL_param + ">, ")
+        else:
+            sys.stdout.write(attendee.CN_param + " <" + attendee.value.split(':')[1] + ">, ") #workaround for MS
+    sys.stdout.write("\n\n")
+    sys.stdout.write(description + "\n")
+
 if __name__=="__main__":
     email_address = None
     accept_decline = 'ACCEPTED'
     opts, args=getopt(sys.argv[1:],"e:aidt")
+
+    if len(args) < 1:
+        sys.stderr.write(usage)
+        sys.exit(1)
+
+    invitation = openics(args[0])
+    #print(invitation)
+    display(invitation)
+
     for opt,arg in opts:
         if opt == '-e':
             email_address = arg
@@ -117,25 +172,26 @@ if __name__=="__main__":
         if opt == '-t':
             accept_decline = 'TENTATIVE'
 
-    if len(args) < 1 or not email_address:
-        sys.stderr.write(usage)
-        sys.exit(1)
-
-    invitation_file = args[0]
-    with open(invitation_file) as f:
-        try:
-            with warnings.catch_warnings(): #vobject uses deprecated Exception stuff
-                warnings.simplefilter("ignore")
-                invitation = vobject.readOne(f, ignoreUnreadable=True)
-        except AttributeError:
-            invitation = vobject.readOne(f, ignoreUnreadable=True)
-
     ans = get_answer(invitation)
 
-    attendees = invitation.vevent.contents['attendee']
+    if invitation.vevent.contents.has_key('attendee'):
+        attendees = invitation.vevent.contents['attendee']
+    else:
+        attendees = ""
     set_accept_state(attendees,accept_decline)
-    ans.vevent.contents['attendee'] = [i for i in attendees if i.value.endswith(email_address)]
-    if len(ans.vevent.contents) < 1:
+    ans.vevent.add('attendee')
+    ans.vevent.attendee_list.pop()
+    flag = 1
+    for attendee in attendees:
+        if hasattr(attendee,'EMAIL_param'):
+            if attendee.EMAIL_param == email_address:
+                ans.vevent.attendee_list.append(attendee)
+                flag = 0
+        else:
+            if attendee.value.split(':')[1] == email_address:
+                ans.vevent.attendee_list.append(attendee)
+                flag = 0
+    if flag:
         sys.stderr.write("Seems like you have not been invited to this event!\n")
         sys.exit(1)
 
