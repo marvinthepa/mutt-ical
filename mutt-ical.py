@@ -143,7 +143,10 @@ def display(ical):
         if hasattr(attendee,'EMAIL_param'):
             sys.stdout.write(attendee.CN_param + " <" + attendee.EMAIL_param + ">, ")
         else:
-            sys.stdout.write(attendee.CN_param + " <" + attendee.value.split(':')[1] + ">, ") #workaround for MS
+            try: 
+                sys.stdout.write(attendee.CN_param + " <" + attendee.value.split(':')[1] + ">, ") #workaround for MS
+            except: 
+                sys.stdout.write(attendee.value.split(':')[1] + " <" + attendee.value.split(':')[1] + ">, ") #workaround for 'mailto:' in email
     sys.stdout.write("\n\n")
     sys.stdout.write(description + "\n")
 
