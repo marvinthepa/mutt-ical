@@ -1,12 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf8 -*-
+#!/usr/bin/env python3
 
 """
 This script is meant as a simple way to reply to ical invitations from mutt.
 See README for instructions and LICENSE for licensing information.
 """
-
-from __future__ import with_statement
 
 __author__="Martin Sander"
 __license__="MIT"
@@ -36,7 +33,7 @@ def del_if_present(dic, key):
 
 def set_accept_state(attendees, state):
     for attendee in attendees:
-        attendee.params['PARTSTAT'] = [unicode(state)]
+        attendee.params['PARTSTAT'] = [state]
         for i in ["RSVP","ROLE","X-NUM-GUESTS","CUTYPE"]:
             del_if_present(attendee.params,i)
     return attendees
@@ -61,7 +58,7 @@ def get_answer(invitation):
 
     # just copy from invitation
     #for i in ["uid", "summary", "dtstart", "dtend", "organizer"]:
-	# There's a problem serializing TZ info in Python, temp fix
+    # There's a problem serializing TZ info in Python, temp fix
     for i in ["uid", "summary", "organizer"]:
         if invitation.vevent.contents.has_key(i):
             ans.vevent.add( invitation.vevent.contents[i][0] )
@@ -88,10 +85,10 @@ def get_mutt_command(ical, email_address, accept_decline, icsfile):
             sender = ical.vevent.organizer.value.split(':')[1] #workaround for MS
     else:
         sender = "NO SENDER"
-    summary = ical.vevent.contents['summary'][0].value.encode()
+    summary = ical.vevent.contents['summary'][0].value
     command = ["mutt", "-a", icsfile,
             "-s", "'%s: %s'" % (accept_decline, summary), "--", sender]
-            #Uncomment the below line, and move it above the -s line to enable the wrapper
+    #Uncomment the below line, and move it above the -s line to enable the wrapper
             #"-e", 'set sendmail=\'ical_reply_sendmail_wrapper.sh\'',
     return command
 
@@ -105,8 +102,8 @@ def execute(command, mailtext):
         result = process.poll()
         time.sleep(.1)
     if result != 0:
-        print "unable to send reply, subprocess exited with\
-                exit code %d\nPress return to continue" % result
+        print("unable to send reply, subprocess exited with\
+                exit code %d\nPress return to continue" % result)
         sys.stdin.readline()
 
 def openics(invitation_file):
@@ -117,10 +114,10 @@ def openics(invitation_file):
                 invitation = vobject.readOne(f, ignoreUnreadable=True)
         except AttributeError:
             invitation = vobject.readOne(f, ignoreUnreadable=True)
-	return invitation
+    return invitation
 
 def display(ical):
-    summary = ical.vevent.contents['summary'][0].value.encode()
+    summary = ical.vevent.contents['summary'][0].value
     if ical.vevent.contents.has_key('organizer'):
         if hasattr(ical.vevent.organizer,'EMAIL_param'):
             sender = ical.vevent.organizer.EMAIL_param
@@ -160,7 +157,6 @@ if __name__=="__main__":
         sys.exit(1)
 
     invitation = openics(args[0])
-    #print(invitation)
     display(invitation)
 
     for opt,arg in opts:
