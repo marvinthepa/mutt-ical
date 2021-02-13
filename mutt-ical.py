@@ -144,7 +144,12 @@ def display(ical):
                 sys.stdout.write(attendee.CN_param + " <" + attendee.value.split(':')[1] + ">, ") #workaround for MS
             except: 
                 sys.stdout.write(attendee.value.split(':')[1] + " <" + attendee.value.split(':')[1] + ">, ") #workaround for 'mailto:' in email
-    sys.stdout.write("\n\n")
+    sys.stdout.write("\n")
+    if hasattr(ical.vevent, 'dtstart'):
+        print("Start:\t%s" % (ical.vevent.dtstart.value,))
+    if hasattr(ical.vevent, 'dtend'):
+        print("End:\t%s" % (ical.vevent.dtend.value,))
+    sys.stdout.write("\n")
     sys.stdout.write(description + "\n")
 
 if __name__=="__main__":
