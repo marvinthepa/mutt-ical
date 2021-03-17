@@ -28,7 +28,7 @@ OPTIONS:
 """ % sys.argv[0]
 
 def del_if_present(dic, key):
-    if key not in dic:
+    if key in dic:
         del dic[key]
 
 def set_accept_state(attendees, state):
