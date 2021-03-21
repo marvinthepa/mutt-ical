@@ -1,6 +1,18 @@
 mutt-ical.py is meant as a simple way to display and reply to ical invitations from mutt.
 
-It was originally authored by Martin Sander, and later modified by Dominic White.
+Warning
+-------
+
+This script was written during a few days in 2013 for Python 2. I currently do
+not use it myself. There might be still issues with recent versions of Python 3.
+
+If this script does not work for you, please consider fixing it yourself. It
+is just a few lines of code after all.
+
+Pull requests are accepted, but please do not expect me to test them, they
+will be merged after a quick and shallow review.
+
+You have been warned.
 
 Installing
 ----------
@@ -20,7 +32,10 @@ OSX Users
 
     text/calendar; mv %s %s.ics && open %s.ics && <path>mutt-ical.py -i -e "user@domain.tld" %s.ics && rm %s.ics
 
-4) You can force iCal to stop trying to send mail on your behalf by replacing the file /Applications/iCal.app/Contents/Resources/Scripts/Mail.scpt with your own ActionScript. I went with the following: error number -128 Which tells it that the user cancelled the action.
+4) You can force iCal to stop trying to send mail on your behalf by replacing
+the file /Applications/iCal.app/Contents/Resources/Scripts/Mail.scpt with your
+own ActionScript. I went with the following: `error number -128`
+Which tells it that the user cancelled the action.
 
     i) Open AppleScript Editor, paste the code from above into a new script, then save it.
     ii) Move the old script /Applications/iCal.app/Contents/Resources/Scripts/Mail.scpt just in case you want to re-enable the functionality.
