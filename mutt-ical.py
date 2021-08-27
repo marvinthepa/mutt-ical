@@ -137,7 +137,7 @@ def display(ical):
     sys.stdout.write("Title:\t" + summary + "\n")
     sys.stdout.write("To:\t")
     for attendee in attendees:
-        if hasattr(attendee,'EMAIL_param'):
+        if hasattr(attendee,'EMAIL_param') and hasattr(attendee,'CN_param'):
             sys.stdout.write(attendee.CN_param + " <" + attendee.EMAIL_param + ">, ")
         else:
             try:
