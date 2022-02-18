@@ -61,11 +61,11 @@ def get_answer(invitation):
     ans.add('vevent')
 
     # just copy from invitation
-    #for i in ["uid", "summary", "dtstart", "dtend", "organizer"]:
-    # There's a problem serializing TZ info in Python, temp fix
-    for i in ["uid", "summary", "organizer"]:
+    for i in ["uid", "summary", "dtstart", "dtend", "organizer"]:
         if i in invitation.vevent.contents:
-            ans.vevent.add( invitation.vevent.contents[i][0] )
+            ans.vevent.add(invitation.vevent.contents[i][0])
+
+    ans.vtimezone = invitation.vtimezone
 
     # new timestamp
     ans.vevent.add('dtstamp')
