@@ -25,9 +25,10 @@ Installing
 text/calendar; <path>mutt-ical.py -i -e "user@domain.tld" %s
 application/ics; <path>mutt-ical.py -i -e "user@domain.tld" %s
 # for auto-view
-text/calendar; <path>mutt-ical.py -D -e "user@domain.tld" %s; copiousoutput
-application/ics; <path>mutt-ical.py -D -e "user@domain.tld" %s; copiousoutput
+text/calendar; <path>mutt-ical.py -D %s; copiousoutput
+application/ics; <path>mutt-ical.py -D %s; copiousoutput
 ```
+(Don't forget to add your email address)
 
 * if you want to use auto view in the pager, use something like the following in .muttrc
    (just an example, configure text/plain and text/html at your own discretion)
@@ -37,22 +38,21 @@ auto_view text/calendar text/plain text/html
 alternative_order text/calendar text/plain text/html
 ```
 
-(Don't forget to add your email address)
 
 OSX Users
 ---------
 
-* For added fun on OSX, you can extend it to the following, to get iCal to open it nicely too (iCal cares not for mime types it seems):
+* For added fun on OSX, you can extend it to the following, to get iCal to open it nicely too (iCal does not care for mime types it seems):
 ```
 text/calendar; mv %s %s.ics && open %s.ics && <path>mutt-ical.py -i -e "user@domain.tld" %s.ics && rm %s.ics
 ```
 * You can force iCal to stop trying to send mail on your behalf by replacing
-the file /Applications/iCal.app/Contents/Resources/Scripts/Mail.scpt with your
+the file `/Applications/iCal.app/Contents/Resources/Scripts/Mail.scpt` with your
 own ActionScript. I went with the following: `error number -128`
 Which tells it that the user cancelled the action.
 
     * Open AppleScript Editor, paste the code from above into a new script, then save it.
-    * Move the old script /Applications/iCal.app/Contents/Resources/Scripts/Mail.scpt just in case you want to re-enable the functionality.
+    * Move the old script `/Applications/iCal.app/Contents/Resources/Scripts/Mail.scpt`  just in case you want to re-enable the functionality.
     * Copy your new script into place.
 
 Usage
