@@ -25,6 +25,7 @@ OPTIONS:
     -d decline
     -t tentatively accept
     (accept is default, last one wins)
+    -D display only
 """ % sys.argv[0]
 
 def del_if_present(dic, key):
@@ -40,7 +41,7 @@ def set_accept_state(attendees, state):
 
 def get_accept_decline():
     while True:
-        sys.stdout.write("\nAccept Invitation? [Y/n/t]")
+        sys.stdout.write("\nAccept Invitation? [Y]es/[n]o/[t]entative/[c]ancel\n")
         ans = sys.stdin.readline()
         if ans.lower() == 'y\n' or ans == '\n':
             return 'ACCEPTED'
@@ -48,6 +49,9 @@ def get_accept_decline():
             return 'DECLINED'
         elif ans.lower() =='t\n':
             return 'TENTATIVE'
+        elif ans.lower() =='c\n':
+            print("aborted")
+            sys.exit(1)
 
 def get_answer(invitation):
     # create
@@ -108,12 +112,7 @@ def execute(command, mailtext):
 
 def openics(invitation_file):
     with open(invitation_file) as f:
-        try:
-            with warnings.catch_warnings(): #vobject uses deprecated Exception stuff
-                warnings.simplefilter("ignore")
-                invitation = vobject.readOne(f, ignoreUnreadable=True)
-        except AttributeError:
-            invitation = vobject.readOne(f, ignoreUnreadable=True)
+        invitation = vobject.readOne(f, ignoreUnreadable=True)
     return invitation
 
 def display(ical):
@@ -155,7 +154,7 @@ def display(ical):
 if __name__=="__main__":
     email_address = None
     accept_decline = 'ACCEPTED'
-    opts, args=getopt(sys.argv[1:],"e:aidt")
+    opts, args=getopt(sys.argv[1:],"e:aidtD")
 
     if len(args) < 1:
         sys.stderr.write(usage)
@@ -165,6 +164,8 @@ if __name__=="__main__":
     display(invitation)
 
     for opt,arg in opts:
+        if opt == '-D':
+            sys.exit(0)
         if opt == '-e':
             email_address = arg
         if opt == '-i':
