@@ -124,9 +124,9 @@ def display(ical):
                 sys.stdout.write(attendee.value.split(':')[1] + " <" + attendee.value.split(':')[1] + ">, ") #workaround for 'mailto:' in email
     sys.stdout.write("\n")
     if hasattr(ical.vevent, 'dtstart'):
-        print("Start:\t%s" % (ical.vevent.dtstart.value,))
+        print("Start:\t%s" % (ical.vevent.dtstart.value.astimezone(tz=None).strftime("%Y-%m-%d %H:%M %z"),))
     if hasattr(ical.vevent, 'dtend'):
-        print("End:\t%s" % (ical.vevent.dtend.value,))
+        print("End:\t%s" % (ical.vevent.dtend.value.astimezone(tz=None).strftime("%Y-%m-%d %H:%M %z"),))
     sys.stdout.write("\n")
     sys.stdout.write(description + "\n")
 
