@@ -111,6 +111,10 @@ def display(ical):
         attendees = ical.vevent.contents['attendee']
     else:
         attendees = ""
+    if 'location' in ical.vevent.contents:
+        locations = ical.vevent.contents['location']
+    else:
+        locations = None
     sys.stdout.write("From:\t" + sender + "\n")
     sys.stdout.write("Title:\t" + summary + "\n")
     sys.stdout.write("To:\t")
@@ -127,6 +131,12 @@ def display(ical):
         print("Start:\t%s" % (ical.vevent.dtstart.value.astimezone(tz=None).strftime("%Y-%m-%d %H:%M %z"),))
     if hasattr(ical.vevent, 'dtend'):
         print("End:\t%s" % (ical.vevent.dtend.value.astimezone(tz=None).strftime("%Y-%m-%d %H:%M %z"),))
+    if locations:
+        sys.stdout.write("Location:\t")
+        for location in locations:
+            if location.value:
+                sys.stdout.write(location.value + ", ")
+        sys.stdout.write("\n")
     sys.stdout.write("\n")
     sys.stdout.write(description + "\n")
 
