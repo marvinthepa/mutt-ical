@@ -63,11 +63,9 @@ def get_answer(invitation):
     ans.add('vevent')
 
     # just copy from invitation
-    for i in ["uid", "summary", "dtstart", "dtend", "organizer"]:
+    for i in ["uid", "summary", "dtstart", "dtend", "organizer", "vtimezone"]:
         if i in invitation.vevent.contents:
             ans.vevent.add(invitation.vevent.contents[i][0])
-
-    ans.vtimezone = invitation.vtimezone
 
     # new timestamp
     ans.vevent.add('dtstamp')
@@ -93,6 +91,12 @@ def openics(invitation_file):
     with open(invitation_file) as f:
         invitation = vobject.readOne(f, ignoreUnreadable=True)
     return invitation
+
+def format_date(value):
+    if isinstance(value, datetime):
+        return value.astimezone(tz=None).strftime("%Y-%m-%d %H:%M %z")
+    else:
+        return value.strftime("%Y-%m-%d %H:%M %z")
 
 def display(ical):
     summary = ical.vevent.contents['summary'][0].value
@@ -128,9 +132,9 @@ def display(ical):
                 sys.stdout.write(attendee.value.split(':')[1] + " <" + attendee.value.split(':')[1] + ">, ") #workaround for 'mailto:' in email
     sys.stdout.write("\n")
     if hasattr(ical.vevent, 'dtstart'):
-        print("Start:\t%s" % (ical.vevent.dtstart.value.astimezone(tz=None).strftime("%Y-%m-%d %H:%M %z"),))
+        print("Start:\t%s" % (format_date(ical.vevent.dtstart.value),))
     if hasattr(ical.vevent, 'dtend'):
-        print("End:\t%s" % (ical.vevent.dtend.value.astimezone(tz=None).strftime("%Y-%m-%d %H:%M %z"),))
+        print("End:\t%s" % (format_date(ical.vevent.dtend.value),))
     if locations:
         sys.stdout.write("Location:\t")
         for location in locations:
