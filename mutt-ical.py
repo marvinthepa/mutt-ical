@@ -27,6 +27,7 @@ OPTIONS:
     -d decline
     -t tentatively accept
     (accept is default, last one wins)
+    -s <sendmail command>
     -D display only
 """ % sys.argv[0]
 
@@ -146,7 +147,7 @@ def display(ical):
 
 def sendmail():
     mutt_setting = subprocess.check_output(["mutt", "-Q", "sendmail"])
-    return mutt_setting.strip().decode().split("=")[1].replace('"', '').split()
+    return mutt_setting.strip().decode().split('sendmail=')[1].replace('"', '').split()
 
 def organizer(ical):
     if 'organizer' in ical.vevent.contents:
@@ -158,9 +159,10 @@ def organizer(ical):
         raise("no organizer in event")
 
 if __name__=="__main__":
+    sendmail = None
     email_address = None
     accept_decline = 'ACCEPTED'
-    opts, args=getopt(sys.argv[1:],"e:aidtD")
+    opts, args=getopt(sys.argv[1:],"s:e:aidtD")
 
     if len(args) < 1:
         sys.stderr.write(usage)
@@ -172,6 +174,8 @@ if __name__=="__main__":
     for opt,arg in opts:
         if opt == '-D':
             sys.exit(0)
+        if opt == '-s':
+            sendmail = arg.split()
         if opt == '-e':
             email_address = arg
         if opt == '-i':
@@ -220,5 +224,6 @@ if __name__=="__main__":
     message.add_alternative(ans.serialize(),
             subtype='calendar',
             params={ 'method': 'REPLY' })
-
-    execute(sendmail() + ['--', to], message.as_bytes())
+    if not sendmail:
+        sendmail = sendmail()
+    execute(sendmail + ['--', to], message.as_bytes())
